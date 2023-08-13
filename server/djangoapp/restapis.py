@@ -3,7 +3,6 @@ import json
 import os
 from .models import CarDealer, DealerReview
 from requests.auth import HTTPBasicAuth
-from decouple import config
 from ibm_watson import NaturalLanguageUnderstandingV1
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from ibm_watson.natural_language_understanding_v1 import Features, SentimentOptions
@@ -53,7 +52,7 @@ def get_dealers_from_cf(url):
     results = []
     json_result = get_request(url)
     # Retrieve the dealer data from the response
-    dealers = json_result["body"]["rows"]
+    dealers = json_result
     # For each dealer in the response
     for dealer in dealers:
         # Get its data in `doc` object
@@ -151,35 +150,27 @@ def get_dealer_reviews_from_cf(url, dealer_id):
     return results
 
 
-# Calls the Watson NLU API and analyses the sentiment of a review
-def analyze_review_sentiments(review_text):
-    # Watson NLU configuration
-    try:
-        if os.environ['env_type'] == 'PRODUCTION':
-            url = os.environ['WATSON_NLU_URL']
-            api_key = os.environ["WATSON_NLU_API_KEY"]
-    except KeyError:
-        url = config('WATSON_NLU_URL')
-        api_key = config('WATSON_NLU_API_KEY')
-
-    version = '2021-08-01'
+# Create an `analyze_review_sentiments` method to call Watson NLU and analyze text
+def analyze_review_sentiments(text):
+    api_key = "2ZrZ5Niba3M2xDtmrAgq2FR2udK7rG75SRR_Lp8KUKL0"
+    url = "https://api.us-south.natural-language-understanding.watson.cloud.ibm.com/instances/a4f5bf9f-b2b7-4470-aa30-ecb78c7de56c"
+    texttoanalyze= text
+    version = '2020-08-01'
     authenticator = IAMAuthenticator(api_key)
-    nlu = NaturalLanguageUnderstandingV1(
-        version=version, authenticator=authenticator)
-    nlu.set_service_url(url)
-
-    # get sentiment of the review
-    try:
-        response = nlu.analyze(text=review_text, features=Features(
-            sentiment=SentimentOptions())).get_result()
-        print(json.dumps(response))
-        # sentiment_score = str(response["sentiment"]["document"]["score"])
-        sentiment_label = response["sentiment"]["document"]["label"]
-    except:
-        print("Review is too short for sentiment analysis. Assigning default sentiment value 'neutral' instead")
-        sentiment_label = "neutral"
-
-    # print(sentiment_score)
+    natural_language_understanding = NaturalLanguageUnderstandingV1(
+    version='2020-08-01',
+    authenticator=authenticator
+    )
+    natural_language_understanding.set_service_url(url)
+    response = natural_language_understanding.analyze(
+        text=text,
+        features= Features(sentiment= SentimentOptions())
+    ).get_result()
+    print(json.dumps(response))
+    sentiment_score = str(response["sentiment"]["document"]["score"])
+    sentiment_label = response["sentiment"]["document"]["label"]
+    print(sentiment_score)
     print(sentiment_label)
-
-    return sentiment_label
+    sentimentresult = sentiment_label
+    
+    return sentimentresult
